@@ -2,6 +2,9 @@ package gui;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.util.Random;
 
 public class GraphWindow extends JFrame {
@@ -17,7 +20,6 @@ public class GraphWindow extends JFrame {
 
     public GraphWindow(String title, Double[] graphElements, Double[] lineElements) {
         super(title);
-        setBounds(100, 100, 750, 750);
         setVisible(true);
 
         Dimension dimension = getContentPane().getSize();
@@ -25,37 +27,41 @@ public class GraphWindow extends JFrame {
         this.max = Utils.getMax(graphElements);
         this.min = Utils.getMin(graphElements);
 
-        this.wPadding = (dimension.getWidth() * 0.1);
-        this.hPadding = (dimension.getHeight() * 0.1);
-        this.width = (dimension.getWidth() * 0.8) / graphElements.length;
-        this.height = (dimension.getHeight() * 0.8) / (max - min);
+        this.wPadding = 25.0;
+        this.hPadding = 25.0;
+        this.width = Math.max((dimension.getWidth() * 0.8) / graphElements.length, 10.0);
+        this.height = Math.max((dimension.getHeight() * 0.8) / (max - min), 5.0);
         switch (Utils.sign(min, max)) {
             case -1: {
-                this.height = (dimension.getHeight() * 0.8) / -min;
+                this.height = Math.max((dimension.getHeight() * 0.8) / -min, 5.0);
                 break;
             }
             case 1: {
-                this.height = (dimension.getHeight() * 0.8) / max;
+                this.height = Math.max((dimension.getHeight() * 0.8) / max, 5.0);
                 break;
             }
         }
-        getContentPane().add(new GraphPanel(graphElements, lineElements));
+        GraphPanel graphPanel = new GraphPanel(graphElements, lineElements);
+        graphPanel.setPreferredSize(new Dimension(50 + 10 * graphElements.length, (int) (50 + (Math.abs(max) + Math.abs(min)) * height)));
+
+        JScrollPane scrollPane = new JScrollPane(graphPanel);
+        getContentPane().add(scrollPane);
+
+        setBounds(100, 100, 800, 600);
     }
 
     @Override
     public void repaint(long time, int x, int y, int width, int height) {
         Dimension dimension = getContentPane().getSize();
-        this.wPadding = (dimension.getWidth() * 0.1);
-        this.hPadding = (dimension.getHeight() * 0.1);
-        this.width = (dimension.getWidth() * 0.8) / graphElements.length;
-        this.height = (dimension.getHeight() * 0.8) / (max - min);
+        this.width = Math.max((dimension.getWidth() * 0.8) / graphElements.length, 10.0);
+        this.height = Math.max((dimension.getHeight() * 0.8) / (max - min), 5.0);
         switch (Utils.sign(min, max)) {
             case -1: {
-                this.height = (dimension.getHeight() * 0.8) / -min;
+                this.height = Math.max((dimension.getHeight() * 0.8) / -min, 5.0);
                 break;
             }
             case 1: {
-                this.height = (dimension.getHeight() * 0.8) / max;
+                this.height = Math.max((dimension.getHeight() * 0.8) / max, 5.0);
                 break;
             }
         }
@@ -71,11 +77,6 @@ public class GraphWindow extends JFrame {
         public GraphPanel(Double[] graphElements, Double[] lineElements) {
             this.graph = new Graph(graphElements);
             this.line = new Line(lineElements);
-        }
-
-        public GraphPanel(Graph graph, Line line) {
-            this.graph = graph;
-            this.line = line;
         }
 
         @Override

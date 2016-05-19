@@ -77,23 +77,33 @@ public class DataSetProcessor {
                     writer.write(outputLine + "\n");
                 }
             }
-        } catch (IOException e1) {
-            e1.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
-    public static void generateDataSet(WeatherWizard weatherWizard, WeatherParameter parameter, File output) {
+    private static String filterEntry(String input) {
+        String[] tokens = input.split(", ");
+        StringBuilder output = new StringBuilder();
+        if ((tokens[0].startsWith("ROE") || tokens[0].startsWith("ROM")) && !input.contains("SNWD")) {
+            for (String token : tokens) {
+                output.append(token).append(",");
+            }
+        }
+        return output.toString();
+    }
+
+    public static void generateDataSet(WeatherWizard weatherWizard, WeatherParameter parameter, Date startDate, Date endDate, File output) {
         try(FileOutputStream outputStream = new FileOutputStream(output);
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream))) {
 
-            for (LocalDate localDate = LocalDate.of(2011, 1, 1); localDate.isBefore(LocalDate.of(2016, 1, 1)); localDate = localDate.plusDays(1)) {
-                Date date = Date.convertFromLocalDate(localDate);
-
-                for (Station station : weatherWizard.getStations()) {
-                    StringBuilder stringBuilder = new StringBuilder("#" + station.getName() + " on " + date.toString() + "\n");
-
+            for (Station station : weatherWizard.getStations()) {
+                for (LocalDate localDate = LocalDate.of(startDate.getYear(), startDate.getMonth(), startDate.getDay()); localDate.isBefore(LocalDate.of(endDate.getYear(), endDate.getMonth(), endDate.getDay())); localDate = localDate.plusDays(1)) {
+                    Date date = Date.convertFromLocalDate(localDate);
                     Weather value = weatherWizard.getStationWeatherOnDate(station, date);
-                    if (value != null) {
+                    if (value != null && value.getValue(parameter) != null) {
+
+                        StringBuilder stringBuilder = new StringBuilder("#" + station.getName() + " on " + date.toString() + "\n");
                         stringBuilder.append(value.getValue(parameter)).append(" ");
 
                         for (int i = 1; i < 6; i++) {
@@ -101,7 +111,7 @@ public class DataSetProcessor {
                             previousDate = previousDate.minusDays(i);
 
                             value = weatherWizard.getStationWeatherOnDate(station, Date.convertFromLocalDate(previousDate));
-                            if (value != null) {
+                            if (value != null && value.getValue(parameter) != null) {
                                 stringBuilder.append(i).append(":").append(value.getValue(parameter)).append(" ");
                             }
                         }
@@ -110,7 +120,7 @@ public class DataSetProcessor {
                         previousYear = previousYear.minusYears(1);
 
                         value = weatherWizard.getStationWeatherOnDate(station, Date.convertFromLocalDate(previousYear));
-                        if (value != null) {
+                        if (value != null && value.getValue(parameter) != null) {
                             stringBuilder.append("6:").append(value.getValue(parameter));
                         }
 
@@ -121,17 +131,6 @@ public class DataSetProcessor {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    private static String filterEntry(String input) {
-        String[] tokens = input.split(", ");
-        StringBuilder output = new StringBuilder();
-        if (tokens[0].startsWith("ROE") || tokens[0].startsWith("ROM")) {
-            for (String token : tokens) {
-                output.append(token).append(",");
-            }
-        }
-        return output.toString();
     }
 
 }
