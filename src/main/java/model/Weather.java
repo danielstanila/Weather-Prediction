@@ -1,9 +1,10 @@
 package model;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.TreeMap;
 
-public class Weather {
+public class Weather implements Serializable {
 
     private Map<WeatherParameter, Double> parameterMap;
 

@@ -6,7 +6,7 @@ import java.util.Random;
 
 public class GraphWindow extends JFrame {
 
-    private Double[] elements;
+    private Double[] graphElements;
     private Double max;
     private Double min;
 
@@ -15,20 +15,19 @@ public class GraphWindow extends JFrame {
     private Double wPadding;
     private Double hPadding;
 
-    public GraphWindow(String title, Double... elements) {
+    public GraphWindow(String title, Double[] graphElements, Double[] lineElements) {
         super(title);
-        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        setBounds(100, 100, 1000, 1000);
+        setBounds(100, 100, 750, 750);
         setVisible(true);
 
         Dimension dimension = getContentPane().getSize();
-        this.elements = elements;
-        this.max = Utils.getMax(elements);
-        this.min = Utils.getMin(elements);
+        this.graphElements = graphElements;
+        this.max = Utils.getMax(graphElements);
+        this.min = Utils.getMin(graphElements);
 
         this.wPadding = (dimension.getWidth() * 0.1);
         this.hPadding = (dimension.getHeight() * 0.1);
-        this.width = (dimension.getWidth() * 0.8) / elements.length;
+        this.width = (dimension.getWidth() * 0.8) / graphElements.length;
         this.height = (dimension.getHeight() * 0.8) / (max - min);
         switch (Utils.sign(min, max)) {
             case -1: {
@@ -40,8 +39,7 @@ public class GraphWindow extends JFrame {
                 break;
             }
         }
-
-        getContentPane().add(new Graph(elements));
+        getContentPane().add(new GraphPanel(graphElements, lineElements));
     }
 
     @Override
@@ -49,7 +47,7 @@ public class GraphWindow extends JFrame {
         Dimension dimension = getContentPane().getSize();
         this.wPadding = (dimension.getWidth() * 0.1);
         this.hPadding = (dimension.getHeight() * 0.1);
-        this.width = (dimension.getWidth() * 0.8) / elements.length;
+        this.width = (dimension.getWidth() * 0.8) / graphElements.length;
         this.height = (dimension.getHeight() * 0.8) / (max - min);
         switch (Utils.sign(min, max)) {
             case -1: {
@@ -65,8 +63,30 @@ public class GraphWindow extends JFrame {
         super.repaint(time, x, y, width, height);
     }
 
-    private class Graph extends JComponent {
+    private class GraphPanel extends JPanel {
 
+        private Graph graph;
+        private Line line;
+
+        public GraphPanel(Double[] graphElements, Double[] lineElements) {
+            this.graph = new Graph(graphElements);
+            this.line = new Line(lineElements);
+        }
+
+        public GraphPanel(Graph graph, Line line) {
+            this.graph = graph;
+            this.line = line;
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            graph.paint(g);
+            line.paint(g);
+        }
+    }
+
+    private class Graph extends JComponent {
         private Double[] elements;
 
         private Graph(Double... elements) {
@@ -76,9 +96,6 @@ public class GraphWindow extends JFrame {
         @Override
         public void paint(Graphics g) {
             g.setColor(Color.RED);
-            Dimension dimension = GraphWindow.this.getContentPane().getSize();
-            //g.drawRect((int)(dimension.getWidth() * 0.1), (int)(dimension.getHeight() * 0.1), (int)(dimension.getWidth() * 0.8), (int)(dimension.getHeight() * 0.8));
-
             for (int i = 0; i < elements.length; i++) {
                 int x = (int) (wPadding + i * width);
                 int w = (int) (width - 1);
@@ -88,11 +105,25 @@ public class GraphWindow extends JFrame {
                     y = hPadding.intValue();
                     h = (int) (-elements[i] * height);
                 }
+                if (h < 0) {
+                    y += h;
+                    h = -h;
+                }
                 g.fillRect(x, y, w, h);
             }
+        }
+    }
 
+    private class Line extends JComponent {
+        private Double[] elements;
+
+        private Line(Double... elements) {
+            this.elements = elements;
+        }
+
+        @Override
+        public void paint(Graphics g) {
             g.setColor(Color.BLUE);
-
             for (int i = 0; i < elements.length - 1; i++) {
                 int x1 = (int) (wPadding + i * width);
                 int x2 = (int) (wPadding + (i + 1) * width);
@@ -105,8 +136,6 @@ public class GraphWindow extends JFrame {
                 g.drawLine(x1, y1, x2, y2);
             }
         }
-
-
     }
 
     private static final class Utils {
@@ -140,19 +169,5 @@ public class GraphWindow extends JFrame {
                 return 0;
             }
         }
-    }
-
-    public static void main(String[] args) {
-
-        Random random = new Random();
-        int n = 81;
-        Double[] values = new Double[n];
-        for (int i = 0 ; i < n; i++) {
-            values[i] = i * 10 + random.nextDouble() * 20 - 500;
-            //values[i] = random.nextDouble() * 10;
-        }
-
-        values[5] = 1000.;
-        new GraphWindow("Weather", values);
     }
 }

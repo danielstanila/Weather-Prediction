@@ -1,6 +1,8 @@
 package model;
 
-public class Station implements Comparable<Station> {
+import java.io.Serializable;
+
+public class Station implements Comparable<Station>, Serializable {
 
     private String name;
     private Double latitude;

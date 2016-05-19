@@ -1,11 +1,10 @@
 package dataprocessing;
 
+import model.*;
 import model.Date;
-import model.Station;
-import model.Weather;
-import model.WeatherParameter;
 
 import java.io.*;
+import java.time.LocalDate;
 import java.util.*;
 
 public class DataSetProcessor {
@@ -20,7 +19,7 @@ public class DataSetProcessor {
 
             String inputLine;
             while ((inputLine = reader.readLine()) != null) {
-                String[] tokens = inputLine.split(" ");
+                String[] tokens = inputLine.split(",");
 
                 Station station = stationMap.get(tokens[0]);
 
@@ -32,26 +31,21 @@ public class DataSetProcessor {
                 WeatherParameter parameter = null;
 
                 switch (tokens[2]) {
-                    case "TMIN" : {
+                    case "TMIN" :
                         parameter = WeatherParameter.MinimumTemperature;
                         break;
-                    }
-                    case "TMAX" : {
+                    case "TMAX" :
                         parameter = WeatherParameter.MaximumTemperature;
                         break;
-                    }
-                    case "TAVG" : {
+                    case "TAVG" :
                         parameter = WeatherParameter.AverageTemperature;
                         break;
-                    }
-                    case "PRCP" : {
+                    case "PRCP" :
                         parameter = WeatherParameter.Precipitations;
                         break;
-                    }
-                    case "SNWD" : {
+                    case "SNWD" :
                         parameter = WeatherParameter.SnowDepth;
                         break;
-                    }
                 }
 
                 Double value = Double.parseDouble(tokens[3]) / 10;
@@ -70,7 +64,7 @@ public class DataSetProcessor {
         return weatherMap;
     }
 
-    public static void convertDataSet(File input, File output) {
+    public static void filterDataSet(File input, File output) {
         try(FileInputStream inputStream = new FileInputStream(input);
             FileOutputStream outputStream = new FileOutputStream(output);
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
@@ -78,7 +72,7 @@ public class DataSetProcessor {
 
             String inputLine;
             while ((inputLine = reader.readLine()) != null) {
-                String outputLine = convertEntry(filterEntry(inputLine));
+                String outputLine = filterEntry(inputLine);
                 if (!outputLine.isEmpty()) {
                     writer.write(outputLine + "\n");
                 }
@@ -88,18 +82,56 @@ public class DataSetProcessor {
         }
     }
 
+    public static void generateDataSet(WeatherWizard weatherWizard, WeatherParameter parameter, File output) {
+        try(FileOutputStream outputStream = new FileOutputStream(output);
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream))) {
+
+            for (LocalDate localDate = LocalDate.of(2011, 1, 1); localDate.isBefore(LocalDate.of(2016, 1, 1)); localDate = localDate.plusDays(1)) {
+                Date date = Date.convertFromLocalDate(localDate);
+
+                for (Station station : weatherWizard.getStations()) {
+                    StringBuilder stringBuilder = new StringBuilder("#" + station.getName() + " on " + date.toString() + "\n");
+
+                    Weather value = weatherWizard.getStationWeatherOnDate(station, date);
+                    if (value != null) {
+                        stringBuilder.append(value.getValue(parameter)).append(" ");
+
+                        for (int i = 1; i < 6; i++) {
+                            LocalDate previousDate = LocalDate.of(date.getYear(), date.getMonth(), date.getDay());
+                            previousDate = previousDate.minusDays(i);
+
+                            value = weatherWizard.getStationWeatherOnDate(station, Date.convertFromLocalDate(previousDate));
+                            if (value != null) {
+                                stringBuilder.append(i).append(":").append(value.getValue(parameter)).append(" ");
+                            }
+                        }
+
+                        LocalDate previousYear = LocalDate.of(date.getYear(), date.getMonth(), date.getDay());
+                        previousYear = previousYear.minusYears(1);
+
+                        value = weatherWizard.getStationWeatherOnDate(station, Date.convertFromLocalDate(previousYear));
+                        if (value != null) {
+                            stringBuilder.append("6:").append(value.getValue(parameter));
+                        }
+
+                        writer.write(stringBuilder.toString() + "\n");
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private static String filterEntry(String input) {
         String[] tokens = input.split(", ");
         StringBuilder output = new StringBuilder();
         if (tokens[0].startsWith("ROE") || tokens[0].startsWith("ROM")) {
             for (String token : tokens) {
-                output.append(token).append(", ");
+                output.append(token).append(",");
             }
         }
         return output.toString();
     }
 
-    private static String convertEntry(String input) {
-        return input;
-    }
 }

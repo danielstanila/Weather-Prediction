@@ -13,6 +13,8 @@ public class WeatherApplication {
         window.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         window.setBounds(100, 100, 700, 500);
         window.setVisible(true);
+
+        new WeatherController();
     }
 
     public static void main(String[] args) {

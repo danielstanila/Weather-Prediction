@@ -1,6 +1,9 @@
 package model;
 
-public class Date implements Comparable<Date> {
+import java.io.Serializable;
+import java.time.LocalDate;
+
+public class Date implements Comparable<Date>, Serializable {
 
     private Integer day;
     private Integer month;
@@ -24,22 +27,9 @@ public class Date implements Comparable<Date> {
         return year;
     }
 
-    /*@Override
-    public int compareTo(Date o) {
-        if (this.year == o.year) {
-            if (this.month == o.month) {
-                if (this.day == o.day) {
-                    return 0;
-                } else {
-                    return this.day.compareTo(o.day);
-                }
-            } else {
-                return this.month.compareTo(o.month);
-            }
-        } else {
-            return this.year.compareTo(o.year);
-        }
-    }*/
+    public static Date convertFromLocalDate(LocalDate localDate) {
+        return new Date(localDate.getDayOfMonth(), localDate.getMonthValue(), localDate.getYear());
+    }
 
     @Override
     public int compareTo(Date o) {
@@ -76,10 +66,6 @@ public class Date implements Comparable<Date> {
 
     @Override
     public String toString() {
-        return "Date{" +
-                "day=" + day +
-                ", month=" + month +
-                ", year=" + year +
-                '}';
+        return day + "/" + month + "/" + year;
     }
 }
